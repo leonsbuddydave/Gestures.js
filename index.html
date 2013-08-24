@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Gestures.js</title>
+		<script type="text/javascript" src="gestures.js"></script>
+		<script type="text/javascript">
+			(function() {
+				document.addEventListener("DOMContentLoaded", function() {
+
+					GestureDetector.Swipe(Swipe.RIGHT, function() {
+						console.log("Right swipe detected!");
+					});
+
+				});
+			})();
+		</script>
+	</head>
+	<body>
+		
+	</body>
+</html>
