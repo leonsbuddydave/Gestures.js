@@ -18,7 +18,7 @@
 				// of just forgetting about transforming, but hey
 				transformer = transformer || function(i){ return i; }
 
-				if (typeof property === 'undefined') {
+				if (typeof property === 'undefined' || property === null) {
 					for (var i = 0; i < total; i++)
 						sum += transformer( set[i] );
 				}
@@ -34,10 +34,15 @@
 				return ( input > (target - tolerance) && input < (target + tolerance))
 			}
 
+			var Hypotenuse = function(x, y) {
+				return Math.sqrt(x * x + y * y);
+			}
+
 			return {
 				AverageOfSet : AverageOfSet,
 				SumSet : SumSet,
-				WithinXOfY : WithinXOfY
+				WithinXOfY : WithinXOfY,
+				Hypotenuse : Hypotenuse
 			};
 		}());
 
@@ -56,7 +61,7 @@
 				RIGHT : 0,
 				DOWN : 90,
 				LEFT : 180,
-				UP : -90
+				UP : 270
 			};
 
 		}());
@@ -68,8 +73,8 @@
 			var BoundGestures = {};
 
 			var Settings = {
-				MinimumVelocity : 30,
-				AngleTolerance : 15,
+				MinimumVelocity : 20,
+				AngleTolerance : 30,
 				SimplicityTolerance : 100
 			};
 
@@ -103,22 +108,25 @@
 				// Get the velocities between points
 				var Velocities = Details.Velocities = [];
 				for (var i = 1; i < Points.length; i++) {
+					var vx = Points[i].x - Points[i - 1].x;
+					var vy = Points[i].y - Points[i - 1].y;
 					Velocities.push({
-						vx : Points[i].x - Points[i - 1].x,
-						vy : Points[i].y - Points[i - 1].y
+						vx : vx,
+						vy : vy,
+						v : GestureMath.Hypotenuse(vx, vy)
 					});
 				}
 
 				// Then get the average velocities
-				Velocities.Average = {
-					x : GestureMath.AverageOfSet(Velocities, "vx"),
-					y : GestureMath.AverageOfSet(Velocities, "vy")
-				};
+				Velocities.Average = GestureMath.AverageOfSet(Velocities, "v");
 
 				// Get the angle variance between points
 				var AnglesBetweenPoints = Details.AnglesBetweenPoints = [];
-				for (var i = 0; i < Velocities.length; i++)
-					AnglesBetweenPoints.push( Math.atan2(Velocities[i].vy, Velocities[i].vx) * (180 / Math.PI) );
+				for (var i = 0; i < Velocities.length; i++) {
+					var angle = Math.atan2(Velocities[i].vy, Velocities[i].vx) * (180 / Math.PI);
+					angle = (angle < 0 ? angle + 360 : angle);
+					AnglesBetweenPoints.push( angle );					
+				}
 
 				// Get the average of those
 				AnglesBetweenPoints.Average = GestureMath.AverageOfSet(AnglesBetweenPoints);
@@ -138,24 +146,15 @@
 					naive implementation party 2013
 				*/
 
-				// First sum the velocities for both axes
-				var sumVX = 0, sumVY = 0;
-				for (var i = 0; i < velocities.length; i++) {
-					sumVX += velocities[i].vx;
-					sumVY += velocities[i].vy;
-				}
-
-				var sumVX = GestureMath.SumSet(velocities, "vx", Math.abs);
-				var sumVY = GestureMath.SumSet(velocities, "vy", Math.abs);
+				var sumVelocity = GestureMath.SumSet(velocities, "v", Math.abs);
 
 				// then get what SHOULD be the total distance covered for both
 				var distanceX = Points[Points.length - 1].x - Points[0].x;
 				var distanceY = Points[Points.length - 1].y - Points[0].y;
+				var distance = GestureMath.Hypotenuse( distanceX, distanceY );
 
 				var isSimple =
-					GestureMath.WithinXOfY(sumVX, distanceX, Settings.SimplicityTolerance ) &&
-					GestureMath.WithinXOfY(sumVY, distanceY, Settings.SimplicityTolerance );
-
+					GestureMath.WithinXOfY(sumVelocity, distance, Settings.SimplicityTolerance );
 				return isSimple;
 			}
 
@@ -166,8 +165,10 @@
 					var events = BoundGestures[Gesture.SWIPE];
 					for (var i = 0; i < events.length; i++) {
 
-						if ( GestureMath.WithinXOfY( details.AnglesBetweenPoints.Average, events[i].angle, Settings.AngleTolerance ) ) {
-							events[i].callback();
+						if ( details.Velocities.Average >= Settings.MinimumVelocity ) {
+							if ( GestureMath.WithinXOfY( details.AnglesBetweenPoints.Average, events[i].angle, Settings.AngleTolerance ) ) {
+								events[i].callback();
+							}
 						}
 
 					}
