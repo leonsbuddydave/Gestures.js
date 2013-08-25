@@ -9,7 +9,19 @@
 				document.addEventListener("DOMContentLoaded", function() {
 
 					GestureDetector.Swipe(Swipe.RIGHT, function() {
-						console.log("Right swipe detected!");
+						console.log("Right swipe!");
+					});
+
+					GestureDetector.Swipe(Swipe.LEFT, function() {
+						console.log("Left swipe!");
+					});
+
+					GestureDetector.Swipe(Swipe.UP, function() {
+						console.log("Swipe up!");
+					});
+
+					GestureDetector.Swipe(Swipe.DOWN, function() {
+						console.log("Swipe down!");
 					});
 
 				});

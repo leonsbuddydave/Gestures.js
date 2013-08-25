@@ -53,7 +53,10 @@
 		var Swipe = (function() {
 
 			return {
-				RIGHT : 0
+				RIGHT : 0,
+				DOWN : 90,
+				LEFT : 180,
+				UP : -90
 			};
 
 		}());
@@ -196,7 +199,7 @@
 
 			var Swipe = function(angle, callback) {
 				// if the provided angle is negative, fix it
-				angle = (angle < 0 ? angle + 360 : angle);
+				//angle = (angle < 0 ? angle + 360 : angle);
 
 				Bind(Gesture.SWIPE, {
 					angle : angle,
